@@ -1,0 +1,36 @@
+$width: 600px;
+$height: 300px;
+
+.title {
+  width: $width;
+
+  h1 {
+    margin: 0 auto;
+    width: 160px;
+  }
+}
+
+
+#myCanvas {
+  background: black;
+  width: $width;
+  height: $height;
+}
+
+
+
+.scores {
+  width: $width;
+
+  div {
+    display: inline-block;
+    span {
+      font-weight: bold;
+    }
+  }
+
+  div.right {
+    float: right;
+  }
+
+}
