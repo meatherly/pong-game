@@ -2,6 +2,60 @@ class Board
   constructor: (@canvas) ->
     console.log("hellos")
 
+class KeyboardHandler
+  MODIFIERS = ['shift', 'ctrl', 'alt', 'meta']
+  ALIAS = {
+    'left': 37,
+    'up': 38,
+    'right': 39,
+    'down': 40,
+    'space': 32,
+    'pageup': 33,
+    'pagedown': 34,
+    'tab': 9,
+  }
+
+  keyCodes: {}
+  modifiers: {}
+
+  onKeyDown: (event) =>
+    @onKeyChange(event, true)
+
+
+  onKeyUp: (event) =>
+    @onKeyChange(event, false)
+
+  bind: () ->
+    document.addEventListener('keydown', @onKeyDown, false)
+    document.addEventListener('keyup', @onKeyUp, false)
+
+  unbind: () ->
+    document.removeEventListener('keydown', @onKeyDown, false)
+    document.removeEventListener('keyup', @onKeyUp, false)
+
+  onKeyChange: (event, pressed) =>
+    keyCode = event.keyCode
+    @keyCodes[keyCode] = pressed
+    this.modifiers['shift']= event.shiftKey
+    this.modifiers['ctrl'] = event.ctrlKey
+    this.modifiers['alt'] = event.altKey
+    this.modifiers['meta'] = event.metaKey
+
+  pressed: (keyDesc) =>
+    keys = keyDesc.split('+')
+    for key in keys
+      if MODIFIERS.indexOf(key) isnt -1
+        pressed = @modifiers[key]
+      else if Object.keys(ALIAS).indexOf(key) isnt -1
+        pressed = @keyCodes[ALIAS[key]]
+      else
+        pressed = @keyCodes[key.toUpperCase().charCodeAt(0)]
+
+      if !pressed
+        return false
+
+    true
+
 class Player
   constructor: (@scoreEl) ->
     @score = 0
@@ -71,8 +125,10 @@ class PongGame
     @paddleTwo = new Paddle([@canvas.width * 0.95, 0])
     @paddleTwo.speed = 5
     @paddles = [@paddleOne, @paddleTwo]
+    @keyboardHandler = new KeyboardHandler
 
   start: () ->
+    @keyboardHandler.bind()
     @lastTime = Date.now()
     requestAnimFrame(@frame)
 
@@ -88,8 +144,13 @@ class PongGame
     requestAnimFrame(@frame)
 
   getInput: () ->
-    for paddle in @paddles
-      paddle.doAiInput(@ball)
+    @paddleOne.input = 0
+    if @keyboardHandler.pressed('up')
+      @paddleOne.input -= 1
+    if @keyboardHandler.pressed('down')
+      @paddleOne.input += 1
+
+    @paddleTwo.doAiInput(@ball)
 
   updateState: () ->
     @ball.update(@deltaTime)
@@ -147,13 +208,8 @@ class PongGame
         @ball.pos[i] = dimension[0] + overshoot
         @ball.vel[i] *= -1
       else if @ball.pos[i] > dimension[1]
-        # jb's
         overshoot = @ball.pos[i] - dimension[1]
         @ball.pos[i] = dimension[1] - overshoot
-
-        # michael's
-        # overshoot = @ball.pos[i] - dimension[1]
-        # @ball.pos[i] -= 2 * (overshoot)
         @ball.vel[i] *= -1
 
   resetGame: () ->
